@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体育の振り返り AI先生</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0fdf4; /* Tailwind green-50 */
+        }
+        .star-active { color: #fbbf24; } /* yellow-400 */
+        .star-inactive { color: #e5e7eb; } /* gray-200 */
+        
+        /* 楽しいアニメーション */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(0); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 text-gray-800">
+
+    <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-green-200">
+        <!-- ヘッダー -->
+        <div class="bg-green-400 p-6 text-center text-white">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 flex items-center justify-center gap-2">
+                <span class="text-4xl">🏃‍♂️</span> 
+                体育の振り返り
+                <span class="text-4xl">🤸‍♀️</span>
+            </h1>
+            <p class="text-green-50 text-lg">AI先生があなたの振り返りを評価・アドバイスします！</p>
+        </div>
+
+        <div class="p-6 md:p-8">
+            <!-- 入力エリア -->
+            <div id="input-section" class="space-y-6">
+                <div class="bg-green-50 p-4 rounded-2xl border-2 border-green-100 relative">
+                    <div class="absolute -top-4 -left-2 text-4xl animate-bounce-slow">📝</div>
+                    <label for="reflection" class="block text-xl font-bold text-green-800 mb-3 ml-8">
+                        今日の体育の授業はどうでしたか？<br>
+                        <span class="text-base font-normal text-green-700">（できるようになったこと、工夫したこと、次に頑張りたいことなどを具体的に書いてみましょう）</span>
+                    </label>
+                    <textarea id="reflection" rows="6" 
+                        class="w-full p-4 text-lg border-2 border-green-300 rounded-xl focus:ring-4 focus:ring-green-200 focus:border-green-500 outline-none transition-all resize-none"
+                        placeholder="例：今日は跳び箱の抱え込み跳びを練習しました。最初は怖かったですが、踏み切る位置を意識したら跳べるようになりました。次はもっと美しいフォームで跳べるようにしたいです。"></textarea>
+                </div>
+
+                <button id="submit-btn" class="w-full bg-orange-400 hover:bg-orange-500 text-white text-2xl font-bold py-4 px-8 rounded-full shadow-[0_6px_0_#c2410c] hover:shadow-[0_2px_0_#c2410c] hover:translate-y-1 transition-all flex justify-center items-center gap-2">
+                    <span>先生に提出する</span>
+                    <span>✉️</span>
+                </button>
+
+                <!-- エラーメッセージ用 -->
+                <div id="error-message" class="hidden text-red-500 font-bold text-center p-4 bg-red-50 rounded-xl"></div>
+            </div>
+
+            <!-- ローディング表示 -->
+            <div id="loading-section" class="hidden py-12 text-center space-y-4">
+                <div class="text-6xl animate-spin inline-block">⚽️</div>
+                <p class="text-xl font-bold text-green-700 animate-pulse">先生が読んでいます... しばらくお待ちください。</p>
+            </div>
+
+            <!-- 結果表示エリア -->
+            <div id="result-section" class="hidden space-y-8 animate-fade-in">
+                
+                <div class="text-center space-y-4">
+                    <h2 class="text-2xl font-bold text-gray-700">AI先生からの評価</h2>
+                    
+                    <!-- 星評価 -->
+                    <div class="flex justify-center items-center gap-2 text-5xl md:text-6xl" id="stars-container">
+                        <!-- JSで星を生成 -->
+                    </div>
+                    <p class="text-xl font-bold text-orange-500" id="score-text"></p>
+                </div>
+
+                <!-- 自分の振り返りを表示するエリア -->
+                <div class="bg-white border-2 border-green-200 rounded-2xl p-6 shadow-sm text-left">
+                    <h3 class="text-lg font-bold text-green-800 mb-3 border-b-2 border-green-100 pb-2 flex items-center gap-2">
+                        <span>📝</span> あなたの書いた振り返り
+                    </h3>
+                    <p id="submitted-reflection-text" class="text-gray-800 whitespace-pre-wrap leading-relaxed text-lg"></p>
+                </div>
+
+                <div class="bg-orange-50 border-4 border-orange-200 rounded-3xl p-6 relative mt-8">
+                    <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white rounded-full p-2 border-4 border-orange-200 shadow-md">
+                        <span class="text-5xl">🧑‍🏫</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-orange-800 mt-6 mb-4 text-center">先生からのフィードバック</h3>
+                    <p id="feedback-text" class="text-lg text-gray-800 leading-relaxed whitespace-pre-wrap font-medium"></p>
+                </div>
+
+                <button id="reset-btn" class="w-full bg-blue-400 hover:bg-blue-500 text-white text-xl font-bold py-3 px-8 rounded-full shadow-[0_4px_0_#1d4ed8] hover:shadow-[0_0px_0_#1d4ed8] hover:translate-y-1 transition-all mt-6">
+                    もう一度書く
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const reflectionInput = document.getElementById('reflection');
+            const submitBtn = document.getElementById('submit-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const inputSection = document.getElementById('input-section');
+            const loadingSection = document.getElementById('loading-section');
+            const resultSection = document.getElementById('result-section');
+            const starsContainer = document.getElementById('stars-container');
+            const scoreText = document.getElementById('score-text');
+            const feedbackText = document.getElementById('feedback-text');
+            const errorMessage = document.getElementById('error-message');
+            const submittedReflectionText = document.getElementById('submitted-reflection-text');
+
+            // APIの呼び出しと評価の実行
+            async function evaluateReflection(text) {
+                // Canvas環境下では空文字にしておくことで自動的にAPIキーが注入されます
+            constapiKey="AQ.Ab8RN6LkylgqKoliIM9vARjqgcK_H2im9-L4YU_jhl2Lhbadqw"; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const systemPrompt = `
+あなたは小学校の温かく熱心な体育の先生です。児童が書いた体育の授業の振り返りを読み、文部科学省の「小学校学習指導要領（体育編）」が示す3つの目標・観点（1. 知識及び技能、 2. 思考力、判断力、表現力等、 3. 学びに向かう力、人間性等）に基づき、5段階で評価し、フィードバックを行ってください。
+
+【対象】
+小学校高学年（5・6年生）
+
+【評価の目安】
+5点: 3つの観点（できたこと、工夫したこと、次への意欲や友達との関わりなど）がとても具体的に書かれている。自らの課題を見つけ、解決に向けた論理的な思考が見られる。
+4点: 複数の観点が具体的に書かれている。
+3点: 授業の様子や感想が素直に書かれている。
+2点: 感想のみで、具体的な学びの内容が少ない。
+1点: 記述が極端に短い、または体育に全く関係がない。
+
+【フィードバックの書き方（超重要）】
+・小学校高学年向けに、適切な漢字を使用してください。
+・児童の頑張りや気づきを褒めるだけでなく、なぜそれが良かったのかを具体的に示し、さらに深い学びや他者との協働に繋がるような言葉がけをしてください。
+・ポジティブなトーンを維持しつつ、次のステップに向けた具体的なアドバイスを含めてください。
+
+出力は必ず以下のJSONスキーマに従ってください。
+`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: text }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                score: { 
+                                    type: "INTEGER", 
+                                    description: "1から5までの5段階評価の数値" 
+                                },
+                                feedback: { 
+                                    type: "STRING", 
+                                    description: "小学校高学年に向けたフィードバックコメント" 
+                                }
+                            },
+                            required: ["score", "feedback"]
+                        }
+                    }
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        
+                        const jsonText = result.candidates[0].content.parts[0].text;
+                        return JSON.parse(jsonText);
+                    } else {
+                        throw new Error("APIからの応答形式が予期せぬものでした。");
+                    }
+                } catch (error) {
+                    console.error("評価エラー:", error);
+                    throw error;
+                }
+            }
+
+            // 星を描画する関数
+            function renderStars(score) {
+                starsContainer.innerHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('span');
+                    star.textContent = '★';
+                    if (i <= score) {
+                        star.className = 'star-active filter drop-shadow-md';
+                    } else {
+                        star.className = 'star-inactive';
+                    }
+                    starsContainer.appendChild(star);
+                }
+            }
+
+            // 送信ボタンのクリックイベント
+            submitBtn.addEventListener('click', async () => {
+                const text = reflectionInput.value.trim();
+                
+                if (!text) {
+                    errorMessage.textContent = '振り返りを書いてからボタンを押してください。';
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+                
+                if (text.length < 5) {
+                    errorMessage.textContent = 'もう少し詳しく書いてみましょう。';
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+
+                // UIの切り替え
+                errorMessage.classList.add('hidden');
+                inputSection.classList.add('hidden');
+                loadingSection.classList.remove('hidden');
+
+                try {
+                    // APIコール
+                    const evaluation = await evaluateReflection(text);
+                    
+                    // 結果の反映
+                    renderStars(evaluation.score);
+                    
+                    // スコアに応じたコメント
+                    let scoreComment = "";
+                    if (evaluation.score === 5) scoreComment = "大変素晴らしい！！";
+                    else if (evaluation.score === 4) scoreComment = "とても良いですね！";
+                    else if (evaluation.score === 3) scoreComment = "よく書けました！";
+                    else if (evaluation.score === 2) scoreComment = "頑張って書きましたね！";
+                    else scoreComment = "書いてくれてありがとう！";
+                    
+                    scoreText.textContent = `${evaluation.score}点！ ${scoreComment}`;
+                    feedbackText.textContent = evaluation.feedback;
+                    submittedReflectionText.textContent = text;
+
+                    // UIの切り替え
+                    loadingSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+
+                } catch (error) {
+                    // エラー時の処理
+                    loadingSection.classList.add('hidden');
+                    inputSection.classList.remove('hidden');
+                    errorMessage.textContent = '通信エラーが発生しました。もう一度試してください。';
+                    errorMessage.classList.remove('hidden');
+                }
+            });
+
+            // リセットボタンのクリックイベント
+            resetBtn.addEventListener('click', () => {
+                reflectionInput.value = '';
+                resultSection.classList.add('hidden');
+                inputSection.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
